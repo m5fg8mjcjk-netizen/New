@@ -903,11 +903,11 @@ let gain=Math.round(post*days/30*(6+S.pop*.7)*fmult*(.45+Math.random())*([1,.80,
 let extra=0,mental=0,energy=0; if(S.job===2)income*=r(20,105)/100; if(S.job===4&&!hospital()&&!parenting()&&!rescue()){income+=Math.round(Math.min(26000,(S.pop*180+Math.sqrt(S.followers)*18)*days/30*Math.random()));} if(S.job===5)gain=Math.round(gain*1.12);
 if(S.cash<0&&!rescue()&&[0,1,2,4,5].includes(S.focus)){S.focus=3;log('金欠のためコスプレ活動を止め、生活費の確保を優先している。')}
 if(S.focus===1||S.focus===4)S.makeupSkill=cl((S.makeupSkill||0)+days/55,0,100);if(S.focus===5||S.focus===6)S.fanHeat=cl((S.fanHeat||10)+days/140,0,100);
-if(hospital()||parenting()||petLeave()||S.rescuePauseUntil>S.day||S.forcedRestUntil>S.day)S.focus=7;else if(rescue())S.focus=3;else if(busy()&&S.focus!==3&&S.focus!==7)S.focus=3;if(S.focus===0){extra=post*110*days/30;energy=-1;mental=-1}
+if(hospital()||parenting()||petLeave()||S.rescuePauseUntil>S.day||S.forcedRestUntil>S.day)S.focus=7;else if(rescue())S.focus=3;else if(busy()&&S.focus!==3&&S.focus!==7)S.focus=3;if(S.focus===0){extra=post*110*days/30;energy=-1;mental=-6}
 else if(S.focus===1){extra=0;mental=-6;energy=-5;S.jobFocusDeal=true}
-else if(S.focus===2){extra=0;energy=-10;mental=-2}
+else if(S.focus===2){extra=0;energy=-10;mental=0}
 else if(S.focus===3){energy=-Math.max(2,Math.ceil((WTdrain[S.job]||2)/4));mental=-2;extra=0}
-else if(S.focus===4){extra=0;energy=-3;mental=-10}
+else if(S.focus===4){extra=0;energy=0;mental=-10}
 else if(S.focus===5){extra=0;energy=-5;mental=7}
 else if(S.focus===6){extra=50*days;mental=2;energy=0}
 else{mental=9;energy=9;gain=0}
@@ -916,14 +916,19 @@ if(S.job===5)mental-=Math.max(2,Math.ceil(days/5));if(S.job===5)mental-=Math.max
 let staminaChange=energy-Math.round(WTdrain[S.job]*days/100)-Math.round(paceDrain[S.pace]*days/125);
 if(S.focus!==7)staminaChange-=Math.max(0,Math.round(days/28));
 // 初期特性：全タイプ100/100からスタートし、行動の効率とリスクに差がつく。
-if(S.focus===2){const chance=r(1,100);gain=chance<=30?Math.round(gain*r(12,22)/10):chance<=70?Math.round(gain*r(5,9)/10):Math.round(gain*r(0,2)/10);}
-else if(S.focus===4)gain=Math.round(gain*1.60);
+if(S.focus===2){const chance=r(1,100);gain=chance<=30?Math.round(gain*3.5*r(12,22)/10):chance<=70?Math.round(gain*3.5*r(5,9)/10):Math.round(gain*3.5*r(0,2)/10);}
+else if(S.focus===4)gain=Math.round(gain*2.20);
 else if(S.focus===0)gain=Math.round(gain*.75);
 else if(S.focus===5)gain=Math.round(gain*.33);
 else gain=0;
 if(S.child&&[0,2,4].includes(S.focus))staminaChange-=Math.ceil(Math.max(0,-staminaChange)*.2);
 if(S.type===0){gain=Math.round(gain*1.30);if(S.focus===0&&mental<0)mental=Math.ceil(mental*1.20);}
-effect((petLeave()||hospital()||parenting()||rescue()||S.focus===7||S.focus===3||S.focus===1)?0:r(1,100)<Math.min(35,post*1.3)?1:0,mental-Math.round(paceDrain[S.pace]*days/48)-(S.focus===7?0:Math.max(1,Math.round(days/14))),staminaChange,(parenting()||petLeave()||hospital()||rescue()||S.rescuePauseUntil>S.day)?0:gain,Math.max((S.familyHome||!S.moved)?-Math.max(0,S.cash):-Infinity,Math.round(income-live*familyDiscount*hardshipDiscount*cohabitDiscount-upkeep-cost+(S.job===8&&S.married&&!parenting()?Math.round(65000*days/30):0))));
+// Ver.3.3: この活動コマンド自体ではイベント参加はメンタルを、撮影は体力を減らさない。
+// 行動外の独立イベント（炎上・入院等）によるダメージは引き続き有効。
+const focusMindChange=mental-Math.round(paceDrain[S.pace]*days/48)-(S.focus===7?0:Math.max(1,Math.round(days/14)));
+const protectedMind=S.focus===2?Math.max(0,focusMindChange):focusMindChange;
+const protectedStamina=S.focus===4?Math.max(0,staminaChange):staminaChange;
+effect((petLeave()||hospital()||parenting()||rescue()||S.focus===7||S.focus===3||S.focus===1)?0:r(1,100)<Math.min(35,post*1.3)?1:0,protectedMind,protectedStamina,(parenting()||petLeave()||hospital()||rescue()||S.rescuePauseUntil>S.day)?0:gain,Math.max((S.familyHome||!S.moved)?-Math.max(0,S.cash):-Infinity,Math.round(income-live*familyDiscount*hardshipDiscount*cohabitDiscount-upkeep-cost+(S.job===8&&S.married&&!parenting()?Math.round(65000*days/30):0))));
 if(rescue()){
   // Rescue support is time-limited and ensures net repayment despite small part-time wages.
   cash(Math.round((S.rescueSupport||65000)*days/30));
